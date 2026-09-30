@@ -1,0 +1,6 @@
+{
+  "name": "MoneyLens — Banking Intelligence Platform",
+  "description": "Your financial life, understood. Autonomous financial intelligence, predictive cashflow forecasting, and decision simulation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
