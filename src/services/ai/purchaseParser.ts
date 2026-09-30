@@ -144,6 +144,17 @@ export function parsePurchaseQuery(query: string): ParsedPurchase | null {
     };
   }
 
+  // Pets & Animals (e.g. dog, cat, puppy)
+  if (q.includes('dog') || q.includes('puppy') || q.includes('cat') || q.includes('kitten') || q.includes('pet')) {
+    const petType = q.includes('dog') || q.includes('puppy') ? 'Dog / Pet' : 'Cat / Pet';
+    return {
+      itemName: petType,
+      amount: detectedAmount || 30000,
+      category: 'Pet Care',
+      isVehicle: false,
+    };
+  }
+
   // Travel / Life Events
   if (q.includes('dubai') || q.includes('trip') || q.includes('vacation') || q.includes('travel') || q.includes('turkey') || q.includes('umrah')) {
     const isUmrah = q.includes('umrah');
@@ -173,43 +184,37 @@ export function parsePurchaseQuery(query: string): ParsedPurchase | null {
     };
   }
 
-  // Generic purchase if amount or keyword was detected
-  if (detectedAmount) {
-    // Try to extract product name from query
-    let cleanItem = query
-      .replace(/(?:can i|should i|could i|afford|buy|purchase|spend on|get|pkr|rs\.?|rs|\$)/gi, '')
-      .replace(/(?:[0-9]+(?:\.[0-9]+)?\s*(?:crore|cr|million|m|lakh|lac|lacs|lakhs|k)?)/gi, '')
-      .replace(/[?!.,]/g, '')
-      .trim();
-
-    if (!cleanItem || cleanItem.length < 3) cleanItem = 'Requested Purchase';
-
-    return {
-      itemName: cleanItem.charAt(0).toUpperCase() + cleanItem.slice(1),
-      amount: detectedAmount,
-      category: 'Discretionary Outlay',
-      isVehicle: false,
-    };
+  // 3. Precise NLP item extraction: "buy a [item] for [amount]..."
+  const verbMatch = query.match(/(?:buy|purchase|get|afford|spend on|cost of)\s+(?:a\s+|an\s+|the\s+)?([a-z0-9\s'-]+?)(?:\s+(?:for|at|costing|worth|around|priced at|if|with|\d)|[?!.,;]|$)/i);
+  if (verbMatch && verbMatch[1]) {
+    let clean = verbMatch[1].trim();
+    // Stop at common sentence continuations
+    clean = clean.split(/\s+(?:if|and|or|cani|can|should|when|with|so|but)\b/i)[0].trim();
+    if (clean && clean.length >= 2) {
+      const finalItem = clean.charAt(0).toUpperCase() + clean.slice(1);
+      return {
+        itemName: finalItem,
+        amount: detectedAmount || 50000,
+        category: 'Discretionary Outlay',
+        isVehicle: false,
+      };
+    }
   }
 
-  // If query contains purchase intent words: "buy", "afford", "purchase", "spend", "cost"
-  if (
-    q.includes('buy') ||
-    q.includes('afford') ||
-    q.includes('purchase') ||
-    q.includes('spend') ||
-    q.includes('get a ') ||
-    q.includes('cost of')
-  ) {
+  // Generic purchase if amount was detected
+  if (detectedAmount) {
     let cleanItem = query
-      .replace(/(?:can i|should i|could i|afford|buy|purchase|spend on|get a|get an|get|cost of|\?)/gi, '')
+      .replace(/(?:can i|should i|could i|afford|buy|purchase|spend on|get a|get an|get|pkr|rs\.?|rs|\$)/gi, '')
+      .replace(/(?:[0-9]+(?:\.[0-9]+)?\s*(?:crore|cr|million|m|lakh|lac|lacs|lakhs|k)?)/gi, '')
+      .split(/\s+(?:if|and|or|cani|can|should|when|with|so|but|for|at)\b/i)[0]
+      .replace(/[?!.,;]/g, '')
       .trim();
 
     if (!cleanItem || cleanItem.length < 2) cleanItem = 'Special Purchase';
 
     return {
       itemName: cleanItem.charAt(0).toUpperCase() + cleanItem.slice(1),
-      amount: 100000, // sensible baseline
+      amount: detectedAmount,
       category: 'Discretionary Outlay',
       isVehicle: false,
     };
