@@ -24,12 +24,14 @@ interface SettingsPageProps {
   onResetFresh?: () => void;
   onLoadSample?: () => void;
   onResetDemo?: () => void;
+  onChangePlatform?: () => void;
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
   onResetFresh,
   onLoadSample,
   onResetDemo,
+  onChangePlatform,
 }) => {
   const { account } = useFinanceData();
   const [resetSuccess, setResetSuccess] = useState(false);
@@ -217,7 +219,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </Badge>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
             <div className="p-4 rounded-xl bg-neutral-950/70 border border-white/[0.06] space-y-2">
               <h4 className="font-semibold text-neutral-200">Re-configure Wallet Setup</h4>
               <p className="text-[11px] text-neutral-400">
@@ -230,7 +232,23 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 className="gap-1.5 border-white/[0.08] text-xs text-neutral-300 w-full"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                <span>Re-configure Wallet Setup</span>
+                <span>Re-configure Wallet</span>
+              </Button>
+            </div>
+
+            <div className="p-4 rounded-xl bg-neutral-950/70 border border-white/[0.06] space-y-2">
+              <h4 className="font-semibold text-neutral-200">Platform Experience</h4>
+              <p className="text-[11px] text-neutral-400">
+                Switch between Web, Android APK/WebAPK, and Apple iOS home screen install modes.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onChangePlatform}
+                className="gap-1.5 border-white/[0.08] text-xs text-neutral-300 w-full"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Change Platform Mode</span>
               </Button>
             </div>
 

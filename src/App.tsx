@@ -11,11 +11,18 @@ import { SimulatorView } from '@/src/features/simulator/SimulatorView';
 import { AgentView } from '@/src/features/agent/AgentView';
 import { useFinanceData } from '@/src/hooks/useFinanceData';
 import { OnboardingWizard } from '@/src/features/onboarding/OnboardingWizard';
+import { PlatformChoiceScreen } from '@/src/features/onboarding/PlatformChoiceScreen';
 
 export default function App() {
   const [viewMode, setViewMode] = useState<'app' | 'landing'>('app');
   const [currentTab, setCurrentTab] = useState<NavItem>('dashboard');
   const [forceSetupModal, setForceSetupModal] = useState(false);
+  const [platformSelected, setPlatformSelected] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('moneylens_platform_selected');
+    }
+    return null;
+  });
 
   const {
     isOnboarded,
@@ -29,7 +36,18 @@ export default function App() {
     setCurrentTab(targetTab);
   };
 
-  // If user has not onboarded yet (fresh download or fresh install) OR explicitly clicked Reconfigure:
+  // 1. FIRST GATEWAY: Ask user whether they want Web, Android, or iOS app version
+  if (!platformSelected) {
+    return (
+      <PlatformChoiceScreen
+        onSelectPlatform={(platform) => {
+          setPlatformSelected(platform);
+        }}
+      />
+    );
+  }
+
+  // 2. SECOND GATEWAY: Ask user to initialize their personal wallet (zero demo data)
   if (!isOnboarded || forceSetupModal) {
     return (
       <OnboardingWizard
@@ -49,10 +67,12 @@ export default function App() {
     );
   }
 
+  // 3. Optional overview landing page view
   if (viewMode === 'landing') {
     return <LandingPageView onEnterApp={handleEnterApp} />;
   }
 
+  // 4. MAIN APPLICATION
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col selection:bg-emerald-500/20 selection:text-emerald-400">
       {/* Navigation Header */}
@@ -99,6 +119,10 @@ export default function App() {
               loadSampleData();
               setForceSetupModal(false);
             }}
+            onChangePlatform={() => {
+              localStorage.removeItem('moneylens_platform_selected');
+              setPlatformSelected(null);
+            }}
           />
         )}
       </main>
@@ -113,10 +137,13 @@ export default function App() {
           </div>
           <div className="flex items-center gap-4 text-neutral-400 font-mono text-[11px]">
             <button
-              onClick={() => setViewMode('landing')}
+              onClick={() => {
+                localStorage.removeItem('moneylens_platform_selected');
+                setPlatformSelected(null);
+              }}
               className="hover:text-emerald-400 transition-colors"
             >
-              Overview
+              Platform: {platformSelected?.toUpperCase()} (Switch)
             </button>
             <span>•</span>
             <button
