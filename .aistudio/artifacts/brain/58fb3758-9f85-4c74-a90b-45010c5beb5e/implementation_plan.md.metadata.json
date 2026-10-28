@@ -1,0 +1,6 @@
+{
+  "summary":  "Architectural plan for transitioning MoneyLens from a simulated bank-connected app to an autonomous, standalone personal wallet and finance tracker with first-time onboarding, customizable recurring salary, on-demand income/expense entry modals, and dynamic ledger calculations.",
+  "updatedAt":  "2026-10-28T15:25:44.861116407Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

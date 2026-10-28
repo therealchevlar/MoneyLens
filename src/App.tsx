@@ -10,20 +10,26 @@ import { InsightsView } from '@/src/features/insights/InsightsView';
 import { SimulatorView } from '@/src/features/simulator/SimulatorView';
 import { AgentView } from '@/src/features/agent/AgentView';
 import { useFinanceData } from '@/src/hooks/useFinanceData';
+import { SetupWalletModal } from '@/src/features/wallet/SetupWalletModal';
 
 export default function App() {
-  const [viewMode, setViewMode] = useState<'landing' | 'app'>('landing');
+  const [viewMode, setViewMode] = useState<'app' | 'landing'>('app');
   const [currentTab, setCurrentTab] = useState<NavItem>('dashboard');
-  const { resetDemoData } = useFinanceData();
+  const [forceSetupModal, setForceSetupModal] = useState(false);
 
-  const handleResetDemo = () => {
-    resetDemoData();
-  };
+  const {
+    isOnboarded,
+    completeOnboarding,
+    loadSampleData,
+    resetToFreshWallet,
+  } = useFinanceData();
 
   const handleEnterApp = (targetTab: NavItem = 'dashboard') => {
     setViewMode('app');
     setCurrentTab(targetTab);
   };
+
+  const showOnboarding = forceSetupModal;
 
   if (viewMode === 'landing') {
     return <LandingPageView onEnterApp={handleEnterApp} />;
@@ -36,7 +42,7 @@ export default function App() {
         currentTab={currentTab}
         onTabChange={(tab) => setCurrentTab(tab)}
         onShowLanding={() => setViewMode('landing')}
-        onResetDemo={handleResetDemo}
+        onOpenSetup={() => setForceSetupModal(true)}
       />
 
       {/* Main Content Area */}
@@ -66,9 +72,32 @@ export default function App() {
         )}
 
         {currentTab === 'settings' && (
-          <SettingsPage onResetDemo={handleResetDemo} />
+          <SettingsPage
+            onResetFresh={() => {
+              resetToFreshWallet();
+              setForceSetupModal(true);
+            }}
+            onLoadSample={() => {
+              loadSampleData();
+              setForceSetupModal(false);
+            }}
+          />
         )}
       </main>
+
+      {/* Standalone Setup / Configuration Modal */}
+      <SetupWalletModal
+        isOpen={showOnboarding}
+        onClose={() => setForceSetupModal(false)}
+        onComplete={(config) => {
+          completeOnboarding(config);
+          setForceSetupModal(false);
+        }}
+        onLoadSample={() => {
+          loadSampleData();
+          setForceSetupModal(false);
+        }}
+      />
 
       {/* Minimal App Footer */}
       <footer className="border-t border-white/[0.06] bg-neutral-950/80 py-5 text-xs text-neutral-500">
@@ -76,7 +105,7 @@ export default function App() {
           <div className="flex items-center gap-2">
             <span className="font-semibold text-neutral-300">MoneyLens</span>
             <span>—</span>
-            <span>Allied Bank Limited Integrated Intelligence</span>
+            <span>Autonomous Personal Wallet & Financial Intelligence</span>
           </div>
           <div className="flex items-center gap-4 text-neutral-400 font-mono text-[11px]">
             <button
@@ -86,9 +115,14 @@ export default function App() {
               Overview
             </button>
             <span>•</span>
-            <span className="text-emerald-400">Autonomous Financial Intelligence</span>
+            <button
+              onClick={() => setForceSetupModal(true)}
+              className="hover:text-emerald-400 transition-colors"
+            >
+              Configure Wallet
+            </button>
             <span>•</span>
-            <span>Bank-Grade Precision</span>
+            <span>100% Client-Side Encryption</span>
           </div>
         </div>
       </footer>

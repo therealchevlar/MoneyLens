@@ -1,6 +1,6 @@
 -- ============================================================
 -- MONEYLENS — PRODUCTION DATABASE SCHEMA (POSTGRESQL / SUPABASE)
--- Allied Bank 5th Fintech Hackathon 2026: Agentic AI for Banking
+-- Autonomous Personal Finance & Wallet Intelligence Engine
 -- ============================================================
 
 -- Enable UUID extension

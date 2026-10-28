@@ -16,6 +16,9 @@ import {
   SlidersHorizontal,
   ShieldCheck,
   CheckCircle2,
+  Plus,
+  Minus,
+  Settings2,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/src/components/ui/card';
 import { Badge } from '@/src/components/ui/badge';
@@ -34,6 +37,9 @@ import { generateInsights } from '@/src/services/ai/insightGenerator';
 import { formatPKR, formatPercent } from '@/src/lib/utils';
 import { NavItem } from '@/src/types/navigation';
 import { HealthScoreExplainerModal } from './HealthScoreExplainerModal';
+import { AddIncomeModal } from '@/src/features/wallet/AddIncomeModal';
+import { AddExpenseModal } from '@/src/features/wallet/AddExpenseModal';
+import { EditSalaryModal } from '@/src/features/wallet/EditSalaryModal';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -49,8 +55,22 @@ interface DashboardViewProps {
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
-  const { account, transactions, recurring, goals, referenceDate } = useFinanceData();
+  const {
+    account,
+    transactions,
+    recurring,
+    goals,
+    referenceDate,
+    addIncome,
+    addExpense,
+    updateMonthlySalary,
+    loadSampleData,
+  } = useFinanceData();
+
   const [isHealthModalOpen, setIsHealthModalOpen] = useState(false);
+  const [isAddIncomeOpen, setIsAddIncomeOpen] = useState(false);
+  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isEditSalaryOpen, setIsEditSalaryOpen] = useState(false);
 
   const currentMonth = '2026-09';
   const previousMonth = '2026-08';
@@ -65,7 +85,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   const goalsAnalytics = calculateGoalsAnalytics(goals, referenceDate);
   const cashflowForecast = calculateCashflowForecast(account, recurring, referenceDate, 60);
   const activeInsights = generateInsights(account, transactions, recurring, goals, referenceDate);
-  const heroInsight = activeInsights[1] || activeInsights[0]; // Dining surge or top anomaly
+  const heroInsight = activeInsights[1] || activeInsights[0];
 
   const topCategories = categorySpending.slice(0, 4);
 
@@ -74,7 +94,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     const isPast = pt.date < referenceDate;
     const isToday = pt.date === referenceDate;
     return {
-      date: pt.date.slice(5), // '09-15'
+      date: pt.date.slice(5),
       fullDate: pt.date,
       balance: pt.balance,
       isProjected: pt.isProjected,
@@ -85,30 +105,137 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
     };
   });
 
+  const hasNoData = transactions.length === 0 && account.balance === 0;
+
   return (
     <div className="space-y-6">
       {/* =========================================================================
-          HERO EXECUTIVE BANNER: "Good morning, Ali" + Alive Health Score + Hero Insight
+          WALLET QUICK-ACTION BAR: + Add Income, - Add Expense, Salary Settings
+         ========================================================================= */}
+      <div className="p-4 sm:p-5 rounded-2xl fintech-card bg-neutral-900/60 border border-white/[0.08] flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="h-11 w-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+            <Wallet className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-neutral-100">
+                {account.name || 'Personal Cash Wallet'}
+              </h2>
+              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                Self-Managed
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-neutral-400 mt-0.5">
+              <span>
+                Monthly Salary:{' '}
+                <strong className="text-neutral-200 font-mono">
+                  {account.monthlySalary && account.monthlySalary > 0
+                    ? `${formatPKR(account.monthlySalary)}/mo (Day ${account.salaryPayday || 1})`
+                    : 'Not configured'}
+                </strong>
+              </span>
+              <span className="text-neutral-600">•</span>
+              <button
+                onClick={() => setIsEditSalaryOpen(true)}
+                className="text-emerald-400 hover:text-emerald-300 underline font-medium"
+              >
+                Change
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Buttons */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setIsAddIncomeOpen(true)}
+            className="text-xs gap-1.5 h-9 font-semibold shadow-md shadow-emerald-950/40"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>+ Add Income</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAddExpenseOpen(true)}
+            className="text-xs gap-1.5 h-9 font-semibold border-rose-500/30 text-rose-300 hover:bg-rose-950/40"
+          >
+            <Minus className="h-3.5 w-3.5" />
+            <span>- Add Expense</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsEditSalaryOpen(true)}
+            className="text-xs gap-1.5 h-9 text-neutral-300 border-white/[0.1] hover:bg-neutral-800"
+          >
+            <Settings2 className="h-3.5 w-3.5 text-neutral-400" />
+            <span>Salary Settings</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Zero State Notice */}
+      {hasNoData && (
+        <div className="p-6 rounded-2xl fintech-card border border-emerald-500/30 bg-emerald-950/10 text-center space-y-3">
+          <div className="h-10 w-10 mx-auto rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+            <Plus className="h-5 w-5" />
+          </div>
+          <div className="max-w-md mx-auto">
+            <h3 className="text-base font-bold text-neutral-100">Your Wallet is Ready</h3>
+            <p className="text-xs text-neutral-400 mt-1">
+              Add your first income deposit or expense above, or load our pre-populated sample template to preview simulations right away.
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-3 pt-1">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setIsAddIncomeOpen(true)}
+              className="text-xs gap-1.5"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Add First Income</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadSampleData}
+              className="text-xs border-white/[0.1] text-neutral-300"
+            >
+              Load Sample Template
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          HERO EXECUTIVE BANNER: Health Score + Wallet Status
          ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left Hero: Greeting & Alive Health Score (5 cols) */}
         <div className="lg:col-span-5 rounded-2xl fintech-card p-6 flex flex-col justify-between relative overflow-hidden">
           <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 blur-3xl pointer-events-none rounded-full" />
-          
+
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[11px] font-mono uppercase tracking-widest text-emerald-400 font-bold">
-                Financial Health & Status
+                Wallet Health & Reserves
               </span>
               <span className="text-[11px] font-mono text-neutral-400">
-                Allied Bank • Account •••• 0918
+                Self-Managed Wallet
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-100">
-              Good morning, Ali
+              Personal Cash Overview
             </h1>
             <p className="text-xs text-neutral-400 mt-1">
-              Here is how your money is performing today.
+              Real-time ledger tracking your custom earnings, salary, and expenses.
             </p>
           </div>
 
@@ -116,7 +243,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           <div className="my-6 p-4 rounded-xl bg-neutral-950/80 border border-white/[0.06] flex items-center justify-between">
             <div className="space-y-1">
               <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 block font-semibold">
-                MoneyLens Score
+                Financial Health Score
               </span>
               <div className="flex items-baseline gap-2">
                 <span className="text-4xl sm:text-5xl font-black font-mono text-neutral-100 num-tabular tracking-tight">
@@ -135,18 +262,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             <div className="space-y-1.5 w-32">
               <div className="flex justify-between text-[10px] font-mono text-neutral-400">
                 <span>Liquidity</span>
-                <span className="text-emerald-400">92/100</span>
+                <span className="text-emerald-400">
+                  {account.balance >= 100000 ? '92/100' : `${Math.round((account.balance / 100000) * 80)}/100`}
+                </span>
               </div>
               <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-400 rounded-full" style={{ width: '92%' }} />
+                <div
+                  className="h-full bg-emerald-400 rounded-full"
+                  style={{ width: `${Math.min(100, Math.max(10, (account.balance / 100000) * 100))}%` }}
+                />
               </div>
 
               <div className="flex justify-between text-[10px] font-mono text-neutral-400 pt-1">
                 <span>Savings</span>
-                <span className="text-emerald-400">70/100</span>
+                <span className="text-emerald-400">
+                  {savingsRate > 0 ? `${Math.round(savingsRate)}%` : '0%'}
+                </span>
               </div>
               <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden">
-                <div className="h-full bg-emerald-400 rounded-full" style={{ width: '70%' }} />
+                <div
+                  className="h-full bg-emerald-400 rounded-full"
+                  style={{ width: `${Math.min(100, savingsRate * 3)}%` }}
+                />
               </div>
 
               <button
@@ -160,8 +297,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           </div>
 
           <div className="flex items-center justify-between text-xs text-neutral-400 pt-2 border-t border-white/[0.06]">
-            <span>Audit & Verification</span>
-            <span className="font-mono text-emerald-400">Bank-Grade Precision</span>
+            <span>Privacy Standard</span>
+            <span className="font-mono text-emerald-400">100% Client-Side Encryption</span>
           </div>
         </div>
 
@@ -176,46 +313,48 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                   <Sparkles className="h-3.5 w-3.5" />
                 </div>
                 <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-400">
-                  Money Insight ✦
+                  Wallet Intelligence ✦
                 </span>
               </div>
-              <Badge variant="warning" className="text-[10px] font-mono uppercase py-0.5">
-                Attention Required
+              <Badge variant="outline" className="text-[10px] font-mono uppercase py-0.5 border-emerald-500/30 text-emerald-400">
+                Active Analysis
               </Badge>
             </div>
 
             <h3 className="text-lg sm:text-xl font-bold text-neutral-100 mt-4 leading-snug">
-              "Your food & dining spending surged +18.2% this month."
+              {heroInsight?.title || 'Your Wallet is Synchronized'}
             </h3>
             <p className="text-xs sm:text-sm text-neutral-300 mt-2 leading-relaxed">
-              Household groceries remained flat (+1.2%), but four late-September restaurant visits (Cafe Aylanto, Ginsoy, Kolachi, Chai Khana) drove PKR 5,000 in excess discretionary spending.
+              {heroInsight?.summary ||
+                'MoneyLens tracks every rupee you log and predicts forward cash dips 60 days into the future.'}
             </p>
           </div>
 
           {/* Supporting Numbers Pill Grid */}
           <div className="my-5 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
             <div className="p-2.5 rounded-xl bg-neutral-950/70 border border-white/[0.06]">
-              <span className="text-[10px] text-neutral-400 block font-mono">September Outflow</span>
+              <span className="text-[10px] text-neutral-400 block font-mono">Monthly Outflow</span>
               <span className="font-mono font-bold text-neutral-100 text-sm mt-0.5 block num-tabular">
-                PKR 32,500
+                {formatPKR(totals.expense)}
               </span>
             </div>
             <div className="p-2.5 rounded-xl bg-neutral-950/70 border border-white/[0.06]">
-              <span className="text-[10px] text-neutral-400 block font-mono">August Baseline</span>
-              <span className="font-mono font-bold text-neutral-400 text-sm mt-0.5 block num-tabular">
-                PKR 27,500
+              <span className="text-[10px] text-neutral-400 block font-mono">Monthly Inflow</span>
+              <span className="font-mono font-bold text-emerald-400 text-sm mt-0.5 block num-tabular">
+                {formatPKR(totals.income)}
               </span>
             </div>
             <div className="p-2.5 rounded-xl bg-neutral-950/70 border border-white/[0.06]">
-              <span className="text-[10px] text-neutral-400 block font-mono">Net Surge</span>
-              <span className="font-mono font-bold text-rose-400 text-sm mt-0.5 block num-tabular">
-                +PKR 5,000
+              <span className="text-[10px] text-neutral-400 block font-mono">Net Surplus</span>
+              <span className="font-mono font-bold text-emerald-400 text-sm mt-0.5 block num-tabular">
+                {totals.netSavings >= 0 ? '+' : ''}
+                {formatPKR(totals.netSavings)}
               </span>
             </div>
             <div className="p-2.5 rounded-xl bg-neutral-950/70 border border-white/[0.06]">
-              <span className="text-[10px] text-neutral-400 block font-mono">Growth Delta</span>
-              <span className="font-mono font-bold text-rose-400 text-sm mt-0.5 block num-tabular">
-                +18.2%
+              <span className="text-[10px] text-neutral-400 block font-mono">Savings Rate</span>
+              <span className="font-mono font-bold text-emerald-400 text-sm mt-0.5 block num-tabular">
+                {savingsRate}%
               </span>
             </div>
           </div>
@@ -223,7 +362,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           {/* Action Row */}
           <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-white/[0.06]">
             <span className="text-[11px] text-neutral-400">
-              Recommended: Set a weekly dining cap of PKR 4,000 to restore baseline.
+              Tip: Log expenses right after purchasing to keep your forecast accurate.
             </span>
             <div className="flex items-center gap-2">
               <Button
@@ -232,7 +371,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 onClick={() => onNavigate('transactions')}
                 className="text-xs border-white/[0.1] hover:bg-neutral-800 text-neutral-200"
               >
-                Inspect Receipts
+                Inspect Ledger
               </Button>
               <Button
                 variant="primary"
@@ -241,7 +380,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 className="text-xs gap-1.5"
               >
                 <Sparkles className="h-3 w-3" />
-                <span>Ask AI Why</span>
+                <span>Ask MoneyLens AI</span>
               </Button>
             </div>
           </div>
@@ -256,10 +395,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         <div className="fintech-card rounded-2xl p-5 border-emerald-500/30 relative">
           <div className="flex items-center justify-between text-neutral-400 mb-2">
             <span className="text-[11px] font-mono uppercase tracking-wider font-semibold">
-              Available Liquid Balance
+              Available Liquid Cash
             </span>
             <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/20">
-              Primary Ledger
+              Live Balance
             </span>
           </div>
           <div className="text-3xl font-black font-mono tracking-tight text-neutral-100 num-tabular">
@@ -267,8 +406,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           </div>
           <div className="flex items-center gap-1.5 mt-2 text-xs text-neutral-400">
             <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
-            <span className="text-emerald-400 font-medium">+8.4%</span>
-            <span>from August close</span>
+            <span className="text-emerald-400 font-medium">Self-Managed</span>
+            <span>in your browser</span>
           </div>
         </div>
 
@@ -276,7 +415,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         <div className="fintech-card rounded-2xl p-5">
           <div className="flex items-center justify-between text-neutral-400 mb-2">
             <span className="text-[11px] font-mono uppercase tracking-wider font-semibold">
-              September Inflow
+              Monthly Inflow
             </span>
             <ArrowUpRight className="h-4 w-4 text-emerald-400" />
           </div>
@@ -284,7 +423,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             {formatPKR(totals.income)}
           </div>
           <div className="text-xs text-neutral-400 mt-2">
-            Salary credited on Sep 1 • 100% on time
+            {account.monthlySalary && account.monthlySalary > 0
+              ? `Salary: ${formatPKR(account.monthlySalary)} (Day ${account.salaryPayday || 1})`
+              : 'Logged via manual deposits'}
           </div>
         </div>
 
@@ -292,7 +433,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         <div className="fintech-card rounded-2xl p-5">
           <div className="flex items-center justify-between text-neutral-400 mb-2">
             <span className="text-[11px] font-mono uppercase tracking-wider font-semibold">
-              September Outflow
+              Monthly Outflow
             </span>
             <ArrowDownRight className="h-4 w-4 text-rose-400" />
           </div>
@@ -300,8 +441,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             {formatPKR(totals.expense)}
           </div>
           <div className="flex items-center gap-1 mt-2 text-xs text-rose-400/90 font-medium">
-            <span>+PKR 14,800</span>
-            <span className="text-neutral-500 font-normal">vs August ({formatPKR(prevTotals.expense)})</span>
+            <span>{transactions.filter((t) => t.type === 'expense').length} Recorded</span>
+            <span className="text-neutral-500 font-normal">expenses in ledger</span>
           </div>
         </div>
 
@@ -312,14 +453,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
               Net Savings & Rate
             </span>
             <Badge variant="success" className="font-mono text-[10px] py-0">
-              16.1% Rate
+              {savingsRate}% Rate
             </Badge>
           </div>
           <div className="text-2xl font-bold font-mono tracking-tight text-emerald-400 num-tabular">
-            +{formatPKR(totals.netSavings)}
+            {totals.netSavings >= 0 ? '+' : ''}
+            {formatPKR(totals.netSavings)}
           </div>
           <div className="text-xs text-neutral-400 mt-2">
-            Retained surplus after all debits
+            Retained surplus after all recorded debits
           </div>
         </div>
       </div>
@@ -336,11 +478,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                   60-Day Cash Flow Trajectory
                 </h3>
                 <Badge variant="outline" className="text-[10px] font-mono border-white/[0.1] text-emerald-400">
-                  Past vs Forecast
+                  Projected Balance
                 </Badge>
               </div>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Deterministic projection modeling scheduled salary credits, rent, and utility deductions.
+                Deterministic projection modeling scheduled salary deposits and recurring bills.
               </p>
             </div>
 
@@ -433,7 +575,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
 
           <div className="p-3 rounded-xl bg-neutral-950/60 border border-white/[0.06] flex items-center justify-between text-xs">
             <span className="text-neutral-400">
-              Minimum projected dip: <strong className="text-emerald-400 font-mono">{formatPKR(cashflowForecast.minimumProjectedBalance)}</strong> on Oct 12.
+              Minimum projected dip: <strong className="text-emerald-400 font-mono">{formatPKR(cashflowForecast.minimumProjectedBalance)}</strong>.
             </span>
             <Button
               variant="outline"
@@ -452,10 +594,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
               <div>
                 <h3 className="text-base font-bold text-neutral-100">
-                  Upcoming Commitments
+                  Recurring Commitments
                 </h3>
                 <span className="text-xs text-neutral-400 block mt-0.5">
-                  Next 15 calendar days
+                  Scheduled monthly bills
                 </span>
               </div>
               <Badge variant="outline" className="font-mono text-[10px] border-white/[0.08]">
@@ -464,35 +606,49 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
             </div>
 
             <div className="space-y-3 mt-4">
-              {recurring
-                .filter((r) => r.active)
-                .slice(0, 4)
-                .map((bill) => (
-                  <div
-                    key={bill.id}
-                    className="p-3 rounded-xl bg-neutral-950/70 border border-white/[0.06] flex items-center justify-between text-xs"
+              {recurring.length === 0 ? (
+                <div className="p-4 text-center text-xs text-neutral-500 space-y-2">
+                  <p>No recurring monthly bills scheduled yet.</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsAddExpenseOpen(true)}
+                    className="text-xs border-white/[0.08]"
                   >
-                    <div>
-                      <span className="font-semibold text-neutral-200 block">{bill.name}</span>
-                      <span className="text-[11px] text-neutral-400 font-mono mt-0.5 block">
-                        Due: {bill.nextDueDate} (Day {bill.dayOfMonth})
-                      </span>
+                    + Add a Recurring Bill
+                  </Button>
+                </div>
+              ) : (
+                recurring
+                  .filter((r) => r.active)
+                  .slice(0, 4)
+                  .map((bill) => (
+                    <div
+                      key={bill.id}
+                      className="p-3 rounded-xl bg-neutral-950/70 border border-white/[0.06] flex items-center justify-between text-xs"
+                    >
+                      <div>
+                        <span className="font-semibold text-neutral-200 block">{bill.name}</span>
+                        <span className="text-[11px] text-neutral-400 font-mono mt-0.5 block">
+                          Day {bill.dayOfMonth} of month
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono font-bold text-neutral-100 block num-tabular">
+                          {formatPKR(bill.amount)}
+                        </span>
+                        <span className="text-[10px] text-emerald-400 block font-mono">
+                          Monthly
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="font-mono font-bold text-neutral-100 block num-tabular">
-                        {formatPKR(bill.amount)}
-                      </span>
-                      <span className="text-[10px] text-emerald-400 block font-mono">
-                        Auto-Scheduled
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  ))
+              )}
             </div>
           </div>
 
           <div className="pt-3 border-t border-white/[0.06] text-xs text-neutral-400 flex items-center justify-between">
-            <span>Total Monthly Recurring:</span>
+            <span>Total Monthly Fixed:</span>
             <span className="font-mono font-bold text-neutral-200">
               {formatPKR(recurringCalc.totalMonthly)}
             </span>
@@ -512,7 +668,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                 Top Spending Outflows
               </h3>
               <span className="text-xs text-neutral-400 block mt-0.5">
-                September vs August comparative analysis
+                Breakdown by expense category
               </span>
             </div>
             <button
@@ -525,41 +681,47 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           </div>
 
           <div className="space-y-4">
-            {topCategories.map((cat) => {
-              const isIncrease = cat.percentageChange > 0;
-              return (
-                <div key={cat.category} className="space-y-1.5 text-xs">
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-neutral-200">{cat.category}</span>
-                    <div className="flex items-center gap-2 font-mono">
-                      <span className="font-bold text-neutral-100 num-tabular">
-                        {formatPKR(cat.currentMonth)}
-                      </span>
-                      <span
-                        className={`text-[11px] ${
-                          isIncrease ? 'text-rose-400' : 'text-emerald-400'
+            {topCategories.length === 0 ? (
+              <div className="p-8 text-center text-xs text-neutral-500">
+                Log expenses to see category breakdown.
+              </div>
+            ) : (
+              topCategories.map((cat) => {
+                const isIncrease = cat.percentageChange > 0;
+                return (
+                  <div key={cat.category} className="space-y-1.5 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-neutral-200">{cat.category}</span>
+                      <div className="flex items-center gap-2 font-mono">
+                        <span className="font-bold text-neutral-100 num-tabular">
+                          {formatPKR(cat.currentMonth)}
+                        </span>
+                        <span
+                          className={`text-[11px] ${
+                            isIncrease ? 'text-rose-400' : 'text-emerald-400'
+                          }`}
+                        >
+                          {isIncrease ? '+' : ''}
+                          {cat.percentageChange.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-1.5 w-full bg-neutral-950 rounded-full overflow-hidden border border-white/[0.04]">
+                      <div
+                        className={`h-full rounded-full ${
+                          cat.category === 'Dining & Food'
+                            ? 'bg-rose-500'
+                            : cat.category === 'Rent'
+                            ? 'bg-emerald-500'
+                            : 'bg-neutral-400'
                         }`}
-                      >
-                        {isIncrease ? '+' : ''}
-                        {cat.percentageChange.toFixed(1)}%
-                      </span>
+                        style={{ width: `${Math.min(100, Math.max(8, cat.percentageOfTotal * 2))}%` }}
+                      />
                     </div>
                   </div>
-                  <div className="h-1.5 w-full bg-neutral-950 rounded-full overflow-hidden border border-white/[0.04]">
-                    <div
-                      className={`h-full rounded-full ${
-                        cat.category === 'Dining & Food'
-                          ? 'bg-rose-500'
-                          : cat.category === 'Rent'
-                          ? 'bg-emerald-500'
-                          : 'bg-neutral-400'
-                      }`}
-                      style={{ width: `${Math.min(100, cat.percentageOfTotal * 2)}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -584,41 +746,55 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
           </div>
 
           <div className="space-y-4">
-            {goalsAnalytics.map((goal) => (
-              <div
-                key={goal.id}
-                className="p-4 rounded-xl bg-neutral-950/70 border border-white/[0.06] space-y-2 text-xs"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-neutral-100">{goal.name}</span>
-                  <Badge
-                    variant={goal.status === 'on_track' ? 'success' : 'warning'}
-                    className="font-mono text-[10px]"
-                  >
-                    {goal.status === 'on_track' ? 'On Track' : 'Needs +PKR 16.4k/mo'}
-                  </Badge>
-                </div>
-
-                <div className="flex justify-between font-mono text-[11px] text-neutral-400">
-                  <span>Saved: {formatPKR(goal.currentAmount)}</span>
-                  <span>Target: {formatPKR(goal.targetAmount)} ({goal.progressPercentage}%)</span>
-                </div>
-
-                <div className="h-2 w-full bg-neutral-900 rounded-full overflow-hidden border border-white/[0.04]">
-                  <div
-                    className="h-full bg-emerald-400 rounded-full"
-                    style={{ width: `${goal.progressPercentage}%` }}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between text-[11px] text-neutral-400 pt-1">
-                  <span>Deadline: {goal.deadline}</span>
-                  <span className="font-mono text-neutral-300">
-                    Contributing: {formatPKR(goal.monthlyContribution)}/mo
-                  </span>
-                </div>
+            {goalsAnalytics.length === 0 ? (
+              <div className="p-8 text-center text-xs text-neutral-500 space-y-2">
+                <p>No financial milestones set.</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onNavigate('goals')}
+                  className="text-xs border-white/[0.08]"
+                >
+                  Create a Goal
+                </Button>
               </div>
-            ))}
+            ) : (
+              goalsAnalytics.map((goal) => (
+                <div
+                  key={goal.id}
+                  className="p-4 rounded-xl bg-neutral-950/70 border border-white/[0.06] space-y-2 text-xs"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-neutral-100">{goal.name}</span>
+                    <Badge
+                      variant={goal.status === 'on_track' ? 'success' : 'warning'}
+                      className="font-mono text-[10px]"
+                    >
+                      {goal.status === 'on_track' ? 'On Track' : 'Needs Higher Pace'}
+                    </Badge>
+                  </div>
+
+                  <div className="flex justify-between font-mono text-[11px] text-neutral-400">
+                    <span>Saved: {formatPKR(goal.currentAmount)}</span>
+                    <span>Target: {formatPKR(goal.targetAmount)} ({goal.progressPercentage}%)</span>
+                  </div>
+
+                  <div className="h-2 w-full bg-neutral-900 rounded-full overflow-hidden border border-white/[0.04]">
+                    <div
+                      className="h-full bg-emerald-400 rounded-full"
+                      style={{ width: `${goal.progressPercentage}%` }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-neutral-400 pt-1">
+                    <span>Deadline: {goal.deadline}</span>
+                    <span className="font-mono text-neutral-300">
+                      Contributing: {formatPKR(goal.monthlyContribution)}/mo
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -628,6 +804,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
         scoreData={healthScore}
         isOpen={isHealthModalOpen}
         onClose={() => setIsHealthModalOpen(false)}
+      />
+
+      {/* Quick Add Income Modal */}
+      <AddIncomeModal
+        isOpen={isAddIncomeOpen}
+        onClose={() => setIsAddIncomeOpen(false)}
+        onAddIncome={(data) => addIncome(data)}
+        referenceDate={referenceDate}
+      />
+
+      {/* Quick Add Expense Modal */}
+      <AddExpenseModal
+        isOpen={isAddExpenseOpen}
+        onClose={() => setIsAddExpenseOpen(false)}
+        onAddExpense={(data) => addExpense(data)}
+        referenceDate={referenceDate}
+      />
+
+      {/* Edit Salary Modal */}
+      <EditSalaryModal
+        isOpen={isEditSalaryOpen}
+        onClose={() => setIsEditSalaryOpen(false)}
+        currentSalary={account.monthlySalary || 0}
+        currentPayday={account.salaryPayday || 1}
+        onSaveSalary={(salary, payday) => updateMonthlySalary(salary, payday)}
       />
     </div>
   );

@@ -403,10 +403,12 @@ export function calculateCashflowForecast(
     let dayExpense = 0;
     const events: string[] = [];
 
-    // Monthly Salary on the 1st
-    if (dayOfMonth === 1 && i > 0) {
-      dayIncome += 250000;
-      events.push('Salary Deposit (+PKR 250k)');
+    // Dynamic Monthly Salary
+    const salaryAmt = account.monthlySalary !== undefined ? account.monthlySalary : 250000;
+    const salaryDay = account.salaryPayday || 1;
+    if (dayOfMonth === salaryDay && i > 0 && salaryAmt > 0) {
+      dayIncome += salaryAmt;
+      events.push(`Salary Deposit (+PKR ${salaryAmt >= 1000 ? `${Math.round(salaryAmt / 1000)}k` : salaryAmt})`);
     }
 
     // Match recurring obligations due on this day of month

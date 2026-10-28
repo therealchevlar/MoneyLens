@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Lock,
   Compass,
+  Wallet,
 } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import { Badge } from '@/src/components/ui/badge';
@@ -57,14 +58,14 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onEnterApp }) 
                 MoneyLens
               </span>
               <span className="text-[10px] font-mono tracking-widest text-emerald-400/90 uppercase block">
-                Banking Intelligence
+                Personal Wallet & Intelligence
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="hidden sm:inline-flex text-[10px] font-mono border-white/[0.08] text-neutral-300">
-              Allied Bank Limited • Private Suite
+              Private & Self-Managed
             </Badge>
             <Button
               variant="primary"
@@ -72,7 +73,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onEnterApp }) 
               onClick={() => onEnterApp('dashboard')}
               className="gap-2 shadow-lg shadow-emerald-950/40 text-xs font-semibold"
             >
-              <span>Access Banking</span>
+              <span>Open Personal Wallet</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </div>
@@ -84,7 +85,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onEnterApp }) 
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.03] border border-white/[0.08] mb-8 backdrop-blur-sm">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-xs font-mono uppercase tracking-wider text-neutral-300">
-            Autonomous Banking & Predictive Cash Flow
+            Private Personal Wallet & Predictive Cash Flow
           </span>
         </div>
 
@@ -96,8 +97,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onEnterApp }) 
         </h1>
 
         <p className="mt-6 text-lg sm:text-xl text-neutral-400 max-w-2xl mx-auto leading-relaxed font-normal">
-          Turn your everyday financial activity into actionable intelligence, forecast cash flow 60 days forward,
-          and stress-test major purchases before you make them.
+          Track earnings, set a monthly salary, add expenses anytime, and forecast cash flow 60 days forward—with zero bank connection required.
         </p>
 
         {/* CTA Buttons */}
@@ -108,7 +108,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onEnterApp }) 
             onClick={() => onEnterApp('dashboard')}
             className="h-12 px-6 gap-2 text-sm font-semibold shadow-xl shadow-emerald-500/10 hover:shadow-emerald-500/20 transition-all"
           >
-            <span>Open MoneyLens</span>
+            <span>Open My Wallet</span>
             <ArrowRight className="h-4 w-4" />
           </Button>
 
@@ -128,10 +128,10 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onEnterApp }) 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.06] pb-5">
             <div>
               <span className="text-xs font-mono uppercase tracking-wider text-emerald-400 block font-semibold">
-                Account Ledger • Allied Bank Limited
+                Personal Cash Wallet Ledger
               </span>
               <h2 className="text-xl sm:text-2xl font-bold text-neutral-100 mt-1">
-                PKR 280,000 <span className="text-xs font-normal text-neutral-400">Available Liquid Balance</span>
+                PKR 280,000 <span className="text-xs font-normal text-neutral-400">Available Liquid Cash</span>
               </h2>
             </div>
             <div className="flex items-center gap-2">
@@ -150,7 +150,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onEnterApp }) 
               <span className="text-lg font-bold font-mono text-emerald-400 mt-1 block">
                 +PKR 250,000
               </span>
-              <span className="text-[11px] text-neutral-500 mt-1 block">Cleared salary credit</span>
+              <span className="text-[11px] text-neutral-500 mt-1 block">Salary & custom deposits</span>
             </div>
 
             <div className="p-4 rounded-xl bg-neutral-950/70 border border-white/[0.06]">
@@ -158,7 +158,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onEnterApp }) 
               <span className="text-lg font-bold font-mono text-neutral-200 mt-1 block">
                 PKR 209,800
               </span>
-              <span className="text-[11px] text-rose-400/90 mt-1 block">+18.2% dining surge</span>
+              <span className="text-[11px] text-rose-400/90 mt-1 block">User-recorded expenses</span>
             </div>
 
             <div className="p-4 rounded-xl bg-neutral-950/70 border border-white/[0.06]">
@@ -179,7 +179,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onEnterApp }) 
             The Financial Intelligence Architecture
           </h2>
           <p className="text-2xl sm:text-3xl font-bold text-neutral-100 tracking-tight">
-            How MoneyLens transforms banking
+            How MoneyLens transforms your personal finance
           </p>
         </div>
 
@@ -198,13 +198,13 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onEnterApp }) 
               </h3>
             </div>
             <p className="text-xs text-neutral-400 leading-relaxed">
-              Pinpoints exact spending velocity shifts, itemizes dining surges across restaurant receipts, and flags atypical transactions before they impact your reserves.
+              Track category outlays, identify spending velocity shifts, and inspect itemized entries without sharing banking passwords.
             </p>
             <button
               onClick={() => onEnterApp('transactions')}
               className="text-xs text-emerald-400 hover:text-emerald-300 font-medium inline-flex items-center gap-1 pt-2"
             >
-              <span>Explore Transactions</span>
+              <span>Explore Ledger</span>
               <ChevronRight className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -223,7 +223,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onEnterApp }) 
               </h3>
             </div>
             <p className="text-xs text-neutral-400 leading-relaxed">
-              Synchronizes scheduled apartment rent, LESCO power bills, and Nayatel internet against upcoming salary credits to predict cash dips before they occur.
+              Models your scheduled monthly salary credits and recurring bills to anticipate cash dips before they occur.
             </p>
             <button
               onClick={() => onEnterApp('dashboard')}
@@ -248,7 +248,7 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onEnterApp }) 
               </h3>
             </div>
             <p className="text-xs text-neutral-400 leading-relaxed">
-              Stress-test capital outlays (Honda Civic, laptops, iPhones) or monthly rent changes against your minimum safety floor and goal milestones before spending a rupee.
+              Stress-test capital outlays (cars, laptops, phones) or rent adjustments against your safety floor before spending a single rupee.
             </p>
             <button
               onClick={() => onEnterApp('simulator')}
@@ -269,11 +269,11 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onEnterApp }) 
                 04. ACT
               </span>
               <h3 className="text-base font-bold text-neutral-100 mt-1">
-                Autonomous Banking AI
+                MoneyLens AI Intelligence
               </h3>
             </div>
             <p className="text-xs text-neutral-400 leading-relaxed">
-              Ask natural financial questions. MoneyLens uses deterministic banking tools to calculate feasibility, state debt burden ratios, and formulate installment plans.
+              Ask natural financial questions. MoneyLens calculates affordability, debt limits, and installment feasibilities directly against your custom ledger.
             </p>
             <button
               onClick={() => onEnterApp('agent')}
@@ -290,10 +290,10 @@ export const LandingPageView: React.FC<LandingPageViewProps> = ({ onEnterApp }) 
       <footer className="relative z-10 border-t border-white/[0.06] py-10 px-6 text-center text-xs text-neutral-500">
         <div className="max-w-4xl mx-auto space-y-2">
           <p className="font-mono text-neutral-400">
-            MoneyLens • Commercial Banking Intelligence Platform
+            MoneyLens • Standalone Personal Finance & Wallet Platform
           </p>
           <p>
-            © 2026 MoneyLens Inc. All rights reserved. Bank-grade client encryption and precision ledger calculations.
+            © 2026 MoneyLens Inc. All rights reserved. 100% Client-Side Privacy & Deterministic Ledger Calculations.
           </p>
         </div>
       </footer>

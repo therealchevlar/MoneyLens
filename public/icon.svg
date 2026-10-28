@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#052e16" />
+      <stop offset="50%" stop-color="#0a0a0a" />
+      <stop offset="100%" stop-color="#064e3b" />
+    </linearGradient>
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="glowGrad" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#10b981" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer Rounded Container -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)" />
+  <rect x="8" y="8" width="496" height="496" rx="120" stroke="#10b981" stroke-opacity="0.25" stroke-width="4" />
+  
+  <!-- Ambient Inner Glow -->
+  <circle cx="256" cy="230" r="140" fill="url(#glowGrad)" filter="blur(20px)" />
+  
+  <!-- Main Symbol: Lens & Financial Pulse / Spark -->
+  <g transform="translate(256, 256)">
+    <!-- Outer Shield / Hexagonal Lens Ring -->
+    <path d="M 0 -130 L 110 -65 L 110 65 L 0 130 L -110 65 L -110 -65 Z" 
+          stroke="url(#emeraldGrad)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="#041f15" fill-opacity="0.8" />
+    
+    <!-- Inner Lens Aperture -->
+    <circle cx="0" cy="0" r="60" stroke="#34d399" stroke-width="12" stroke-dasharray="16 8" fill="none" opacity="0.9" />
+    
+    <!-- Central Financial Spark / Bolt -->
+    <path d="M 10 -45 L -20 5 L 8 5 L -10 45 L 25 -5 L -3 -5 Z" fill="url(#emeraldGrad)" />
+    
+    <!-- Dynamic Corner Accents -->
+    <circle cx="0" cy="-130" r="8" fill="#34d399" />
+    <circle cx="110" cy="-65" r="8" fill="#34d399" />
+    <circle cx="110" cy="65" r="8" fill="#34d399" />
+    <circle cx="0" cy="130" r="8" fill="#34d399" />
+    <circle cx="-110" cy="65" r="8" fill="#34d399" />
+    <circle cx="-110" cy="-65" r="8" fill="#34d399" />
+  </g>
+</svg>

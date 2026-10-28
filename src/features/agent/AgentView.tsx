@@ -93,13 +93,13 @@ export const AgentView: React.FC<AgentViewProps> = ({ onNavigate }) => {
             </Badge>
           </div>
           <p className="text-sm text-neutral-400">
-            Grounded banking agent executing deterministic financial tools. Never hallucinating numbers.
+            Grounded personal finance agent executing deterministic calculations. Never hallucinating numbers.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-[11px] font-mono border-white/[0.08] text-neutral-400">
-            Model: Gemini 3.8 Flash • Banking Agent
+            Model: Gemini 3.8 Flash • Personal Wallet Intelligence
           </Badge>
         </div>
       </div>
@@ -152,7 +152,7 @@ export const AgentView: React.FC<AgentViewProps> = ({ onNavigate }) => {
                         MoneyLens Financial Evaluation
                       </span>
                       <span className="text-[10px] font-mono text-emerald-400">
-                        Verified via {msg.steps.length} Banking Tools
+                        Verified via {msg.steps.length} Financial Engines
                       </span>
                     </div>
                   </div>
@@ -276,7 +276,7 @@ export const AgentView: React.FC<AgentViewProps> = ({ onNavigate }) => {
               <div className="flex items-center gap-2 text-emerald-400 font-bold">
                 <RefreshCw className="h-4 w-4 animate-spin" />
                 <span className="uppercase tracking-wider">
-                  MoneyLens Autonomous Banking Pipeline Active
+                  MoneyLens Autonomous Intelligence Pipeline Active
                 </span>
               </div>
 

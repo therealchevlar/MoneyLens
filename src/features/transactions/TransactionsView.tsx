@@ -137,7 +137,7 @@ export const TransactionsView: React.FC = () => {
             </Badge>
           </div>
           <p className="text-sm text-neutral-400">
-            Verified Pakistani banking entries with historical category baseline comparison.
+            Itemized wallet ledger entries with historical category baseline comparison.
           </p>
         </div>
 

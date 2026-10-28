@@ -1,4 +1,5 @@
 import { financialTools, ToolExecutionRecord } from '@/src/services/ai/financialTools';
+import { dataService } from '@/src/services/dataService';
 import { parsePurchaseQuery, ParsedPurchase } from '@/src/services/ai/purchaseParser';
 import { formatPKR } from '@/src/lib/utils';
 import { GoogleGenAI } from '@google/genai';
@@ -57,47 +58,48 @@ class AgentService {
       : '';
 
     // Step 1: Base ledger inspection
-    recordStep('getAccountSummary', 'Reading verified liquid balance and monthly cash metrics...');
+    recordStep('getAccountSummary', 'Reading verified wallet balance and cash metrics...');
     await sleep(150);
+    const account = dataService.getAccount();
     const accountSummary = financialTools.getAccountSummary();
-    const currentBalance = accountSummary.currentBalance; // 280,000
+    const currentBalance = account.balance;
+    const monthlySalary = account.monthlySalary ?? 0;
+    const salaryPayday = account.salaryPayday ?? 1;
 
-    recordStep('getUpcomingObligations', 'Auditing scheduled bills, rent, and utility deductions...');
+    recordStep('getUpcomingObligations', 'Auditing scheduled bills, rent, and recurring deductions...');
     await sleep(150);
     const upcomingBills = financialTools.getUpcomingObligations();
-    const upcomingTotal = upcomingBills.reduce((s, b) => s + b.amount, 0); // ~81,500
-    const safeHeadroom = Math.max(0, currentBalance - upcomingTotal - 100000); // 98,500
+    const upcomingTotal = upcomingBills.reduce((s, b) => s + b.amount, 0);
+    const safeHeadroom = Math.max(0, currentBalance - upcomingTotal - 100000);
 
     // Step 2: Try real Gemini 3.8 Flash if an API key is available
     if (activeApiKey) {
       try {
-        recordStep('geminiCall', 'Engaging Gemini 3.8 Flash with grounded banking context...');
+        recordStep('geminiCall', 'Engaging Gemini 3.8 Flash with grounded wallet intelligence...');
         const ai = new GoogleGenAI({ apiKey: activeApiKey });
-        const systemPrompt = `You are MoneyLens AI, an elite autonomous banking intelligence partner for Allied Bank Limited (Pakistan).
-The customer is Ali Khan.
+        const systemPrompt = `You are MoneyLens AI, an elite autonomous personal finance and wallet intelligence engine.
+The user is managing their personal wallet and finances in PKR.
 Current Grounded Ledger Context:
-- Available Liquid Balance: PKR 280,000
-- Monthly Salary: PKR 250,000 (Credited 1st of month, verified on-time)
-- September Total Outflow: PKR 209,800
-- September Net Savings: PKR 40,200 (16.1% savings rate)
-- Upcoming Scheduled Bills (Next 15 days): PKR 81,500 (Rent PKR 55,000 on Oct 3, LESCO Electricity PKR 22,000 on Oct 10, Nayatel PKR 4,500 on Oct 12)
+- Available Liquid Balance: PKR ${currentBalance.toLocaleString()}
+- Configured Monthly Salary: PKR ${monthlySalary.toLocaleString()} (Expected on day ${salaryPayday} of each month)
+- September Total Outflow: PKR ${accountSummary.septemberExpenses.toLocaleString()}
+- September Net Savings: PKR ${accountSummary.netSavings.toLocaleString()}
+- Upcoming Scheduled Bills / Obligations (Next 15 days): PKR ${upcomingTotal.toLocaleString()} (${upcomingBills.map(b => `${b.merchant} PKR ${b.amount.toLocaleString()} due ${b.nextDueDate}`).join(', ') || 'No upcoming bills in the next 15 days'})
 - Strict Emergency Floor Target: PKR 100,000
-- Safe Discretionary Spending Capacity Right Now: PKR 98,500 (280k - 81.5k bills - 100k safety floor)
-- Active Goals: University Semester Fees (PKR 84,000 / 200,000 accumulated, deadline Dec 15, current pace PKR 30k/mo leaves PKR 41k deficit unless increased to PKR 46.4k/mo)
-- Subscriptions: Coursera PKR 4,500/mo, Netflix PKR 1,500/mo, Spotify PKR 400/mo (Total PKR 6,400/mo)
-- Recent Anomaly: +18.2% dining surge in September (PKR 32,500 vs PKR 27,500 August), Hafeez Center electronics purchase PKR 48,000
+- Safe Discretionary Spending Capacity Right Now: PKR ${safeHeadroom.toLocaleString()} (Balance ${currentBalance.toLocaleString()} - Bills ${upcomingTotal.toLocaleString()} - 100k safety floor)
+- Active Goals: University Semester Fees (PKR 84,000 / 200,000 accumulated, deadline Dec 15)
 - Automotive Market Context: Honda Civic new PKR 8.5M (30% down payment PKR 2.55M), Used Civic PKR 4.5M, Toyota Corolla PKR 7.5M, Suzuki Alto PKR 2.9M.
 
 Rules:
 1. Provide a direct, authoritative, highly intelligent answer to the user's specific question.
-2. If they ask about buying something (dog, laptop, car, shoes, phone), do exact math against the PKR 280,000 balance, PKR 81,500 bills, and PKR 100,000 floor.
+2. If they ask about buying something (dog, laptop, car, shoes, phone), do exact math against the PKR ${currentBalance.toLocaleString()} balance, PKR ${upcomingTotal.toLocaleString()} bills, and PKR 100,000 floor.
 3. If they ask whether they can exceed budget or should lower, give them the exact numeric limit.
 4. Output strictly valid JSON matching this schema:
 {
   "summary": "Direct, executive answer in 1-2 sharp sentences",
   "keyNumbers": [{"label": "string", "value": "string", "highlight": boolean}],
   "why": "Detailed financial breakdown explaining causation, exact PKR numbers, and timeline",
-  "impact": "Concrete impact on emergency floor, cashflow dips, or university fees",
+  "impact": "Concrete impact on emergency floor, cashflow dips, or financial goals",
   "options": [{"label": "Actionable next step button"}]
 }`;
 
@@ -210,14 +212,14 @@ Rules:
               { label: 'Estimated Monthly Loan EMI', value: `${formatPKR(monthlyLoanEmi)}/mo` },
             ],
             why: isCivic
-              ? `A ${detectedPurchase.itemName} costs approximately ${formatPKR(price)} in Pakistan—which is ${(price / currentBalance).toFixed(1)}x your entire liquid bank balance. Even financing through an auto loan requires a mandatory 30% down payment of ${formatPKR(downPayment30)} (9.1x your current funds). Furthermore, the monthly loan installment of ${formatPKR(monthlyLoanEmi)} would consume ${(monthlyLoanEmi / 2500).toFixed(0)}% of your monthly PKR 250,000 salary, exceeding State Bank of Pakistan's Debt Burden Ratio (DBR) guidelines.`
-              : `The capital outlay of ${formatPKR(price)} is ${(price / currentBalance).toFixed(1)}x your current liquid savings. Committing to this purchase would cause severe liquidity distress and violate standard banking debt-to-income thresholds.`,
+              ? `A ${detectedPurchase.itemName} costs approximately ${formatPKR(price)} in Pakistan—which is ${(price / Math.max(1, currentBalance)).toFixed(1)}x your entire liquid wallet balance. Even financing through an auto loan requires a mandatory 30% down payment of ${formatPKR(downPayment30)} (${(downPayment30 / Math.max(1, currentBalance)).toFixed(1)}x your current funds). ${monthlySalary > 0 ? `Furthermore, the monthly installment of ${formatPKR(monthlyLoanEmi)} would consume ${(monthlyLoanEmi / (monthlySalary / 100)).toFixed(0)}% of your monthly ${formatPKR(monthlySalary)} salary.` : ''}`
+              : `The capital outlay of ${formatPKR(price)} is ${(price / Math.max(1, currentBalance)).toFixed(1)}x your current liquid savings. Committing to this purchase would cause severe liquidity distress.`,
             impact:
-              'Pursuing this purchase immediately would completely wipe out your emergency reserves and make funding your upcoming University Semester Fees (PKR 200,000 due Dec 15) impossible.',
+              'Pursuing this purchase immediately would completely wipe out your emergency reserves and compromise your financial goals.',
             options: [
               { label: `Simulate 30% Down Payment (${formatPKR(downPayment30)}) in What-If` },
               { label: 'Explore certified pre-owned vehicles under PKR 2.5M' },
-              { label: 'Prioritize University Fees milestone first (Dec 2026)' },
+              { label: 'Review what-if simulation curve' },
             ],
           },
         };
@@ -238,13 +240,13 @@ Rules:
               { label: 'Forecast Minimum Dip', value: formatPKR(projectedMin), highlight: true },
               { label: 'Remaining Safe Headroom', value: `+${formatPKR(purchaseHeadroom)}`, highlight: true },
             ],
-            why: `Your liquid balance of ${formatPKR(currentBalance)} easily absorbs ${formatPKR(price)}. Even after scheduled deductions between Oct 3 and Oct 12 for apartment rent (PKR 55,000), electricity (PKR 22,000), and internet (PKR 4,500), your balance stays well above the safety threshold.${
+            why: `Your liquid balance of ${formatPKR(currentBalance)} easily absorbs ${formatPKR(price)}.${upcomingBills.length > 0 ? ` Even after scheduled deductions (${upcomingBills.slice(0, 3).map(b => `${b.merchant} ${formatPKR(b.amount)}`).join(', ')}), your balance stays well above the safety threshold.` : ' Your balance remains securely above your emergency floor.'}${
               asksAboutBudgetLimit
                 ? ` Regarding your budget: you do NOT need to lower it. In fact, you have up to ${formatPKR(purchaseHeadroom)} in additional spending headroom before touching your emergency floor.`
                 : ''
             }`,
             impact:
-              'Zero negative impact. Your PKR 100,000 emergency reserve is 100% preserved and your University Semester Fees monthly contribution remains fully funded.',
+              'Zero negative impact. Your PKR 100,000 emergency reserve is 100% preserved and your active goals remain fully funded.',
             options: [
               { label: `Simulate ${detectedPurchase.itemName} in What-If` },
               { label: 'View 60-day interactive cash flow curve' },
@@ -270,14 +272,13 @@ Rules:
             { label: 'Projected Low Dip', value: formatPKR(projectedMin) },
             { label: 'Reserve Floor Deficit', value: `-${formatPKR(reserveDeficit)}`, highlight: true },
           ],
-          why: `Between October 3rd and October 12th, scheduled rent (PKR 55,000), electricity (PKR 22,000), and internet (PKR 4,500) will debit PKR 81,500. Deducting ${formatPKR(price)} drops your cash reserves to ${formatPKR(projectedMin)}, leaving you under the minimum PKR 100,000 safety threshold.${
+          why: `${upcomingBills.length > 0 ? `Upcoming scheduled commitments will debit ${formatPKR(upcomingTotal)}. ` : ''}Deducting ${formatPKR(price)} drops your cash reserves to ${formatPKR(projectedMin)}, leaving you under the minimum PKR 100,000 safety threshold.${
             asksAboutBudgetLimit ? ` You should lower your target outlay to keep your minimum balance above PKR 100,000.` : ''
           }`,
           impact:
-            'Your active University Semester Fees milestone will be delayed by 1 to 2 months as liquid capital is diverted.',
+            'Active financial milestones will be delayed as liquid capital is diverted.',
           options: [
             { label: `Simulate 3-Month Installment (${formatPKR(Math.round(price / 3))}/mo)` },
-            { label: 'Defer purchase to December salary bonus' },
             { label: 'Review what-if simulation curve' },
           ],
         },
@@ -385,20 +386,22 @@ Rules:
         timestamp: new Date().toISOString(),
         structuredAnswer: {
           summary:
-            `Yes. Your cash trajectory confirms you will maintain positive liquidity. Your projected balance will not drop below ${formatPKR(forecast.minimumProjectedBalance)}, safely above the PKR 100,000 buffer.`,
+            `Your cash trajectory projects positive liquidity with a minimum buffer of ${formatPKR(forecast.minimumProjectedBalance)} over the next 60 days.`,
           keyNumbers: [
             { label: 'Current Balance', value: formatPKR(currentBalance) },
-            { label: 'Scheduled Oct 1 Salary', value: '+PKR 250,000' },
-            { label: 'Upcoming 15-Day Bills', value: '-PKR 81,500' },
+            { label: 'Monthly Salary', value: monthlySalary > 0 ? `+${formatPKR(monthlySalary)} (Day ${salaryPayday})` : 'Not Set' },
+            { label: 'Upcoming Bills', value: `-${formatPKR(upcomingTotal)}` },
             { label: 'Forecast Minimum Balance', value: formatPKR(forecast.minimumProjectedBalance), highlight: true },
           ],
           why:
-            'The scheduled salary credit of PKR 250,000 on October 1st arrives before your apartment rent (PKR 55,000 on Oct 3rd) and LESCO power bill (PKR 22,000 on Oct 10th) are deducted, keeping your account well-buffered.',
+            monthlySalary > 0
+              ? `Your scheduled salary credit of ${formatPKR(monthlySalary)} on day ${salaryPayday} replenishes your wallet relative to scheduled commitments (${formatPKR(upcomingTotal)}).`
+              : `Your current wallet reserves of ${formatPKR(currentBalance)} buffer against upcoming obligations (${formatPKR(upcomingTotal)}).`,
           impact:
-            'Zero risk of overdraft or late penalty fees under normal baseline spending patterns.',
+            'Zero risk of cash exhaustion under current spending velocity.',
           options: [
             { label: 'View 60-day interactive cash flow curve' },
-            { label: 'Schedule automated bill alerts' },
+            { label: 'Configure monthly salary settings' },
           ],
         },
       };
@@ -458,7 +461,8 @@ Rules:
             { label: 'Savings Rate Score', value: '70 / 100' },
           ],
           why:
-            'Your score increased because of strong salary stability (PKR 250k) and an accumulated emergency reserve buffer. The only drag is the Spending Volatility dimension, which lost 12 points due to the 18% restaurant dining spike.',
+            `Your score is supported by your liquid wallet balance (${formatPKR(currentBalance)}) and reserve buffer.` +
+            (monthlySalary > 0 ? ` Your recurring monthly salary of ${formatPKR(monthlySalary)} provides stable predictable cash flow.` : ''),
           impact:
             'Maintaining your current pace will likely cross the 80/100 ("Excellent") threshold by November.',
           options: [
@@ -522,7 +526,7 @@ Rules:
           { label: 'Safe Spending Capacity', value: formatPKR(safeHeadroom), highlight: true },
         ],
         why:
-          'MoneyLens grounds its intelligence in deterministic banking calculations. Your cash reserves easily cover all upcoming obligations and emergency buffers before your next salary credit.',
+          'MoneyLens grounds its intelligence in deterministic personal finance calculations. Your wallet reserves cover upcoming obligations and emergency buffers relative to your income schedule.',
         impact:
           'You have positive net cash flow of PKR ' + accountSummary.netSavings.toLocaleString() + ' for the current month.',
         options: [

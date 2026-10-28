@@ -8,27 +8,29 @@ import {
   Bot,
   Settings,
   ShieldCheck,
-  Globe,
+  Wallet,
 } from 'lucide-react';
 import { NavItem } from '@/src/types/navigation';
 import { Badge } from '@/src/components/ui/badge';
 import { cn } from '@/src/lib/utils';
+import { PWAInstallButton } from '@/src/components/pwa/PWAInstallButton';
 
 interface NavbarProps {
   currentTab: NavItem;
   onTabChange: (tab: NavItem) => void;
   onShowLanding: () => void;
-  onResetDemo: () => void;
+  onOpenSetup?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentTab,
   onTabChange,
   onShowLanding,
+  onOpenSetup,
 }) => {
   const navItems = [
     { id: 'dashboard' as NavItem, label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'transactions' as NavItem, label: 'Transactions', icon: ReceiptText },
+    { id: 'transactions' as NavItem, label: 'Ledger', icon: ReceiptText },
     { id: 'insights' as NavItem, label: 'Insights', icon: Sparkles, badge: 'Live' },
     { id: 'goals' as NavItem, label: 'Milestones', icon: Target },
     { id: 'simulator' as NavItem, label: 'What-If', icon: SlidersHorizontal },
@@ -39,13 +41,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/[0.06] bg-neutral-950/85 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Modern Minimalist Logo */}
+        {/* Modern Minimalist Aperture Lens Logo */}
         <div className="flex items-center gap-3">
           <button
             onClick={onShowLanding}
             className="flex items-center gap-3 text-left group focus:outline-none"
           >
-            {/* Sleek Minimalist Aperture Lens Logo */}
             <div className="h-9 w-9 rounded-xl bg-neutral-900 border border-white/[0.1] group-hover:border-emerald-500/50 flex items-center justify-center transition-all duration-200 shadow-sm relative overflow-hidden">
               <svg
                 viewBox="0 0 24 24"
@@ -71,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </div>
               <span className="text-[9px] text-neutral-400 tracking-wider uppercase font-mono block">
-                Banking Intelligence
+                Personal Wallet & Intelligence
               </span>
             </div>
           </button>
@@ -107,12 +108,14 @@ export const Navbar: React.FC<NavbarProps> = ({
         </nav>
 
         {/* User Account & Quick Action */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          <PWAInstallButton />
+
           <div className="hidden md:flex items-center gap-2 text-xs bg-neutral-900/80 border border-white/[0.08] px-3 py-1.5 rounded-xl font-mono">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-neutral-200 font-semibold">Ali Khan</span>
+            <span className="text-neutral-200 font-semibold">Personal Wallet</span>
             <span className="text-neutral-600">|</span>
-            <span className="text-neutral-400">PKR •••• 0918</span>
+            <span className="text-neutral-400">Private</span>
           </div>
 
           <button

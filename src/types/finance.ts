@@ -38,6 +38,8 @@ export interface Account {
   balance: number;
   currency: 'PKR';
   updatedAt: string;
+  monthlySalary?: number;
+  salaryPayday?: number;
 }
 
 export interface Goal {

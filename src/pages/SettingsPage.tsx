@@ -15,14 +15,25 @@ import {
   Eye,
   EyeOff,
   Cpu,
+  Wallet,
+  RotateCcw,
 } from 'lucide-react';
 import { runFinancialEngineTests } from '@/src/services/finance/financeEngine.test';
+import { useFinanceData } from '@/src/hooks/useFinanceData';
+import { formatPKR } from '@/src/lib/utils';
 
 interface SettingsPageProps {
-  onResetDemo: () => void;
+  onResetFresh?: () => void;
+  onLoadSample?: () => void;
+  onResetDemo?: () => void;
 }
 
-export const SettingsPage: React.FC<SettingsPageProps> = ({ onResetDemo }) => {
+export const SettingsPage: React.FC<SettingsPageProps> = ({
+  onResetFresh,
+  onLoadSample,
+  onResetDemo,
+}) => {
+  const { account } = useFinanceData();
   const [resetSuccess, setResetSuccess] = useState(false);
   const [testResults, setTestResults] = useState<ReturnType<typeof runFinancialEngineTests> | null>(null);
 
@@ -49,23 +60,31 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onResetDemo }) => {
     setTimeout(() => setKeySaved(false), 2500);
   };
 
-  const handleReset = () => {
-    onResetDemo();
-    setResetSuccess(true);
-    setTimeout(() => setResetSuccess(false), 2500);
-  };
-
   const handleRunTests = () => {
     const res = runFinancialEngineTests();
     setTestResults(res);
   };
 
+  const handleStartFresh = () => {
+    if (onResetFresh) onResetFresh();
+    else if (onResetDemo) onResetDemo();
+    setResetSuccess(true);
+    setTimeout(() => setResetSuccess(false), 2500);
+  };
+
+  const handleLoadSample = () => {
+    if (onLoadSample) onLoadSample();
+    else if (onResetDemo) onResetDemo();
+    setResetSuccess(true);
+    setTimeout(() => setResetSuccess(false), 2500);
+  };
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="border-b border-white/[0.06] pb-5">
-        <h1 className="text-2xl font-bold tracking-tight text-neutral-100">Settings & Security</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-neutral-100">Settings & Wallet Controls</h1>
         <p className="text-sm text-neutral-400 mt-1">
-          Account specifications, model configuration, and financial calculation integrity.
+          Wallet configuration, model keys, calculation integrity, and data synchronization.
         </p>
       </div>
 
@@ -73,25 +92,29 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onResetDemo }) => {
         {/* Profile Card */}
         <div className="fintech-card rounded-2xl p-6 space-y-4">
           <div className="flex items-center gap-2 border-b border-white/[0.06] pb-3">
-            <User className="h-4 w-4 text-emerald-400" />
-            <h3 className="text-base font-bold text-neutral-100">Account Profile</h3>
+            <Wallet className="h-4 w-4 text-emerald-400" />
+            <h3 className="text-base font-bold text-neutral-100">Wallet Profile</h3>
           </div>
           <div className="space-y-3 text-xs">
             <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
-              <span className="text-neutral-400">Account Holder</span>
-              <span className="font-semibold text-neutral-200">Ali Khan</span>
+              <span className="text-neutral-400">Wallet Title</span>
+              <span className="font-semibold text-neutral-200">{account.name || 'Personal Cash Wallet'}</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
               <span className="text-neutral-400">Base Currency</span>
               <span className="font-mono text-emerald-400 font-semibold">PKR (Pakistani Rupee)</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
-              <span className="text-neutral-400">Account Number</span>
-              <span className="font-mono text-neutral-300">ABL-PK72-00918</span>
+              <span className="text-neutral-400">Monthly Salary</span>
+              <span className="font-mono text-neutral-200">
+                {account.monthlySalary && account.monthlySalary > 0
+                  ? `${formatPKR(account.monthlySalary)} (Day ${account.salaryPayday || 1})`
+                  : 'Manual Inflow'}
+              </span>
             </div>
             <div className="flex justify-between py-1.5">
-              <span className="text-neutral-400">Account Tier</span>
-              <span className="text-neutral-300">Allied Private Suite</span>
+              <span className="text-neutral-400">Storage Posture</span>
+              <span className="text-emerald-400 font-medium">100% Offline / Client-Side</span>
             </div>
           </div>
         </div>
@@ -100,7 +123,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onResetDemo }) => {
         <div className="fintech-card rounded-2xl p-6 space-y-4">
           <div className="flex items-center gap-2 border-b border-white/[0.06] pb-3">
             <ShieldCheck className="h-4 w-4 text-emerald-400" />
-            <h3 className="text-base font-bold text-neutral-100">Security & Encryption</h3>
+            <h3 className="text-base font-bold text-neutral-100">Privacy & Security</h3>
           </div>
           <div className="space-y-2.5 text-xs text-neutral-300 leading-relaxed">
             <p>
@@ -109,11 +132,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onResetDemo }) => {
             <ul className="space-y-1.5 text-neutral-400">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                <span>Zero storage of sensitive credentials or payment cards.</span>
+                <span>Zero bank logins, account scraping, or external credentials needed.</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                <span>End-to-end client-side encryption for local data state.</span>
+                <span>All records are stored locally in your browser storage.</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
@@ -148,7 +171,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onResetDemo }) => {
                     type={showKey ? 'text' : 'password'}
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="AIzaSy... (leave blank to use the built-in banking engine)"
+                    placeholder="AIzaSy... (leave blank to use the built-in deterministic engine)"
                     className="w-full bg-neutral-950 border border-white/[0.08] rounded-xl pl-3 pr-10 py-2.5 text-neutral-200 font-mono text-xs focus:outline-none focus:border-emerald-500/50"
                   />
                   <button
@@ -189,7 +212,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onResetDemo }) => {
               <div>
                 <span className="font-semibold text-neutral-200 block">Run Ledger Verification Suite</span>
                 <p className="text-[11px] text-neutral-400 mt-0.5">
-                  Validates all mathematical calculations: savings rate (16.1%), food increase (+18.2%), subscriptions (PKR 6,400/mo), and health score (74/100).
+                  Validates mathematical calculations across savings rate, cash flow curves, and financial health score dimensions.
                 </p>
               </div>
               <Button size="sm" variant="primary" onClick={handleRunTests} className="gap-1.5 shrink-0 text-xs">
@@ -236,29 +259,45 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ onResetDemo }) => {
           <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
             <div className="flex items-center gap-2">
               <Database className="h-4 w-4 text-emerald-400" />
-              <h3 className="text-base font-bold text-neutral-100">Data Synchronization</h3>
+              <h3 className="text-base font-bold text-neutral-100">Wallet Data Controls</h3>
             </div>
             <Badge variant="outline" className="font-mono text-[10px] border-white/[0.08]">
-              Primary Ledger
+              Local Storage
             </Badge>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-neutral-950/70 border border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div>
-              <h4 className="font-semibold text-neutral-200">Re-synchronize Account Ledger</h4>
-              <p className="text-[11px] text-neutral-400 mt-0.5">
-                Restores the verified 6-month historical transaction ledger, PKR 280,000 balance, and scheduled obligations.
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div className="p-4 rounded-xl bg-neutral-950/70 border border-white/[0.06] space-y-2">
+              <h4 className="font-semibold text-neutral-200">Start Fresh Wallet</h4>
+              <p className="text-[11px] text-neutral-400">
+                Resets all local transactions and re-opens the onboarding setup to start from zero.
               </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleStartFresh}
+                className="gap-1.5 border-white/[0.08] text-xs text-neutral-300 w-full"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Re-configure Wallet</span>
+              </Button>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleReset}
-              className="gap-1.5 border-white/[0.08] text-xs shrink-0 text-neutral-300"
-            >
-              <RefreshCw className="h-3.5 w-3.5" />
-              <span>{resetSuccess ? 'Synchronized!' : 'Re-synchronize'}</span>
-            </Button>
+
+            <div className="p-4 rounded-xl bg-neutral-950/70 border border-white/[0.06] space-y-2">
+              <h4 className="font-semibold text-neutral-200">Load Sample Template</h4>
+              <p className="text-[11px] text-neutral-400">
+                Loads a realistic 6-month transaction dataset with salary, rent, and utility bills for testing.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLoadSample}
+                className="gap-1.5 border-white/[0.08] text-xs text-neutral-300 w-full"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span>Load Sample Template</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>

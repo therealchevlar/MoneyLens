@@ -3,13 +3,15 @@ import { Account, Goal, RecurringObligation, Transaction } from '@/src/types/fin
 export const CURRENT_REFERENCE_DATE = '2026-09-30';
 
 export const INITIAL_ACCOUNT: Account = {
-  id: 'acc_abl_001',
-  name: 'Primary Current Account',
-  bankName: 'Allied Bank Limited',
-  accountNumberMasked: 'PK72 ABL 0019 **** 3810',
+  id: 'acc_wallet_001',
+  name: 'Primary Personal Wallet',
+  bankName: 'Personal Wallet',
+  accountNumberMasked: 'WALLET •••• 3810',
   balance: 280000,
   currency: 'PKR',
   updatedAt: '2026-09-30T09:00:00Z',
+  monthlySalary: 250000,
+  salaryPayday: 1,
 };
 
 export const INITIAL_GOALS: Goal[] = [
