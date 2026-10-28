@@ -10,7 +10,7 @@ import { InsightsView } from '@/src/features/insights/InsightsView';
 import { SimulatorView } from '@/src/features/simulator/SimulatorView';
 import { AgentView } from '@/src/features/agent/AgentView';
 import { useFinanceData } from '@/src/hooks/useFinanceData';
-import { SetupWalletModal } from '@/src/features/wallet/SetupWalletModal';
+import { OnboardingWizard } from '@/src/features/onboarding/OnboardingWizard';
 
 export default function App() {
   const [viewMode, setViewMode] = useState<'app' | 'landing'>('app');
@@ -29,7 +29,25 @@ export default function App() {
     setCurrentTab(targetTab);
   };
 
-  const showOnboarding = forceSetupModal;
+  // If user has not onboarded yet (fresh download or fresh install) OR explicitly clicked Reconfigure:
+  if (!isOnboarded || forceSetupModal) {
+    return (
+      <OnboardingWizard
+        onComplete={(config) => {
+          completeOnboarding(config);
+          setForceSetupModal(false);
+          setViewMode('app');
+          setCurrentTab('dashboard');
+        }}
+        onLoadSample={() => {
+          loadSampleData();
+          setForceSetupModal(false);
+          setViewMode('app');
+          setCurrentTab('dashboard');
+        }}
+      />
+    );
+  }
 
   if (viewMode === 'landing') {
     return <LandingPageView onEnterApp={handleEnterApp} />;
@@ -85,20 +103,6 @@ export default function App() {
         )}
       </main>
 
-      {/* Standalone Setup / Configuration Modal */}
-      <SetupWalletModal
-        isOpen={showOnboarding}
-        onClose={() => setForceSetupModal(false)}
-        onComplete={(config) => {
-          completeOnboarding(config);
-          setForceSetupModal(false);
-        }}
-        onLoadSample={() => {
-          loadSampleData();
-          setForceSetupModal(false);
-        }}
-      />
-
       {/* Minimal App Footer */}
       <footer className="border-t border-white/[0.06] bg-neutral-950/80 py-5 text-xs text-neutral-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -119,10 +123,10 @@ export default function App() {
               onClick={() => setForceSetupModal(true)}
               className="hover:text-emerald-400 transition-colors"
             >
-              Configure Wallet
+              Reconfigure Wallet
             </button>
             <span>•</span>
-            <span>100% Client-Side Encryption</span>
+            <span className="text-emerald-400 font-semibold">100% Private Offline Ledger</span>
           </div>
         </div>
       </footer>

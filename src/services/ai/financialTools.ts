@@ -30,15 +30,17 @@ export interface ToolExecutionRecord {
 export const financialTools = {
   getAccountSummary: () => {
     const acc = dataService.getAccount();
-    const totals = calculateMonthlyTotals(dataService.getTransactions(), '2026-09');
+    const curMonth = dataService.getReferenceDate().slice(0, 7);
+    const totals = calculateMonthlyTotals(dataService.getTransactions(), curMonth);
     return {
       accountId: acc.id,
-      bank: acc.bankName,
-      accountNumber: acc.accountNumberMasked,
+      walletName: acc.name,
       currentBalance: acc.balance,
+      monthlySalary: acc.monthlySalary || 0,
+      salaryPayday: acc.salaryPayday || 1,
       currency: acc.currency,
-      septemberIncome: totals.income,
-      septemberExpenses: totals.expense,
+      currentMonthIncome: totals.income,
+      currentMonthExpenses: totals.expense,
       netSavings: totals.netSavings,
     };
   },
@@ -55,8 +57,10 @@ export const financialTools = {
   },
 
   getSpendingByCategory: (args: { currentMonth?: string; previousMonth?: string } = {}) => {
-    const cur = args.currentMonth || '2026-09';
-    const prev = args.previousMonth || '2026-08';
+    const cur = args.currentMonth || dataService.getReferenceDate().slice(0, 7);
+    const prevDate = new Date(dataService.getReferenceDate());
+    prevDate.setMonth(prevDate.getMonth() - 1);
+    const prev = args.previousMonth || prevDate.toISOString().slice(0, 7);
     return calculateCategorySpending(dataService.getTransactions(), cur, prev);
   },
 

@@ -72,8 +72,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isEditSalaryOpen, setIsEditSalaryOpen] = useState(false);
 
-  const currentMonth = '2026-09';
-  const previousMonth = '2026-08';
+  const currentMonth = referenceDate ? referenceDate.slice(0, 7) : new Date().toISOString().slice(0, 7);
+  const prevDate = new Date(referenceDate || new Date().toISOString().split('T')[0]);
+  prevDate.setMonth(prevDate.getMonth() - 1);
+  const previousMonth = prevDate.toISOString().slice(0, 7);
 
   // Deterministic calculations
   const totals = calculateMonthlyTotals(transactions, currentMonth);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/src/components/ui/card';
 import { Badge } from '@/src/components/ui/badge';
 import { Button } from '@/src/components/ui/button';
@@ -11,16 +11,14 @@ import {
   CheckCircle2,
   XCircle,
   Play,
-  Key,
-  Eye,
-  EyeOff,
   Cpu,
   Wallet,
   RotateCcw,
+  Sparkles,
 } from 'lucide-react';
 import { runFinancialEngineTests } from '@/src/services/finance/financeEngine.test';
 import { useFinanceData } from '@/src/hooks/useFinanceData';
-import { formatPKR } from '@/src/lib/utils';
+import { formatCurrency } from '@/src/lib/utils';
 
 interface SettingsPageProps {
   onResetFresh?: () => void;
@@ -36,29 +34,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const { account } = useFinanceData();
   const [resetSuccess, setResetSuccess] = useState(false);
   const [testResults, setTestResults] = useState<ReturnType<typeof runFinancialEngineTests> | null>(null);
-
-  // API Key Form State
-  const [apiKey, setApiKey] = useState('');
-  const [showKey, setShowKey] = useState(false);
-  const [keySaved, setKeySaved] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('moneylens_gemini_key') || '';
-    setApiKey(saved);
-  }, []);
-
-  const handleSaveKey = () => {
-    localStorage.setItem('moneylens_gemini_key', apiKey.trim());
-    setKeySaved(true);
-    setTimeout(() => setKeySaved(false), 2500);
-  };
-
-  const handleClearKey = () => {
-    localStorage.removeItem('moneylens_gemini_key');
-    setApiKey('');
-    setKeySaved(true);
-    setTimeout(() => setKeySaved(false), 2500);
-  };
 
   const handleRunTests = () => {
     const res = runFinancialEngineTests();
@@ -84,7 +59,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       <div className="border-b border-white/[0.06] pb-5">
         <h1 className="text-2xl font-bold tracking-tight text-neutral-100">Settings & Wallet Controls</h1>
         <p className="text-sm text-neutral-400 mt-1">
-          Wallet configuration, model keys, calculation integrity, and data synchronization.
+          Wallet configuration, calculation integrity verification, and data management.
         </p>
       </div>
 
@@ -98,23 +73,29 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           <div className="space-y-3 text-xs">
             <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
               <span className="text-neutral-400">Wallet Title</span>
-              <span className="font-semibold text-neutral-200">{account.name || 'Personal Cash Wallet'}</span>
+              <span className="font-semibold text-neutral-200">{account.name}</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
-              <span className="text-neutral-400">Base Currency</span>
-              <span className="font-mono text-emerald-400 font-semibold">PKR (Pakistani Rupee)</span>
+              <span className="text-neutral-400">Account Type</span>
+              <span className="font-mono text-neutral-300">Personal Cash Ledger</span>
             </div>
             <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
-              <span className="text-neutral-400">Monthly Salary</span>
+              <span className="text-neutral-400">Liquid Balance</span>
+              <span className="font-mono font-bold text-emerald-400">
+                {formatCurrency(account.balance, account.currency)}
+              </span>
+            </div>
+            <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
+              <span className="text-neutral-400">Monthly Earnings</span>
               <span className="font-mono text-neutral-200">
                 {account.monthlySalary && account.monthlySalary > 0
-                  ? `${formatPKR(account.monthlySalary)} (Day ${account.salaryPayday || 1})`
-                  : 'Manual Inflow'}
+                  ? `${formatCurrency(account.monthlySalary, account.currency)} / mo (Day ${account.salaryPayday || 1})`
+                  : 'Variable / Freelance'}
               </span>
             </div>
             <div className="flex justify-between py-1.5">
-              <span className="text-neutral-400">Storage Posture</span>
-              <span className="text-emerald-400 font-medium">100% Offline / Client-Side</span>
+              <span className="text-neutral-400">Base Currency</span>
+              <span className="font-mono text-neutral-200">{account.currency || 'PKR'}</span>
             </div>
           </div>
         </div>
@@ -146,52 +127,22 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </div>
         </div>
 
-        {/* Gemini API Key Configuration Card */}
+        {/* AI Engine Architecture Card */}
         <div className="fintech-card rounded-2xl p-6 space-y-4 md:col-span-2">
           <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
             <div className="flex items-center gap-2">
-              <Key className="h-4 w-4 text-emerald-400" />
-              <h3 className="text-base font-bold text-neutral-100">AI Model Configuration</h3>
+              <Sparkles className="h-4 w-4 text-emerald-400" />
+              <h3 className="text-base font-bold text-neutral-100">Financial Intelligence Engine</h3>
             </div>
-            <Badge variant={apiKey ? 'success' : 'default'} className="font-mono text-[10px]">
-              {apiKey ? 'Custom Key Active' : 'Native Financial Engine Active'}
+            <Badge variant="success" className="font-mono text-[10px]">
+              Ready & Active
             </Badge>
           </div>
 
-          <div className="space-y-3 text-xs">
-            <p className="text-neutral-400">
-              MoneyLens uses Google Gemini 3.8 Flash for reasoning. If you have a custom Google AI API key, you can enter it below.
+          <div className="space-y-2 text-xs text-neutral-300 leading-relaxed">
+            <p>
+              MoneyLens integrates Gemini 3.8 Flash with grounded deterministic financial tools. All answers evaluate your verified live balance, monthly salary schedule, and 60-day cash flow trajectories with zero hallucination.
             </p>
-
-            <div className="space-y-2">
-              <label className="block text-neutral-300 font-medium">Gemini API Key</label>
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <input
-                    type={showKey ? 'text' : 'password'}
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="AIzaSy... (leave blank to use the built-in deterministic engine)"
-                    className="w-full bg-neutral-950 border border-white/[0.08] rounded-xl pl-3 pr-10 py-2.5 text-neutral-200 font-mono text-xs focus:outline-none focus:border-emerald-500/50"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowKey(!showKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
-                  >
-                    {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-                <Button size="sm" variant="primary" onClick={handleSaveKey}>
-                  {keySaved ? 'Saved!' : 'Save Key'}
-                </Button>
-                {apiKey && (
-                  <Button size="sm" variant="outline" onClick={handleClearKey} className="border-white/[0.08]">
-                    Clear
-                  </Button>
-                )}
-              </div>
-            </div>
           </div>
         </div>
 
@@ -268,9 +219,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div className="p-4 rounded-xl bg-neutral-950/70 border border-white/[0.06] space-y-2">
-              <h4 className="font-semibold text-neutral-200">Start Fresh Wallet</h4>
+              <h4 className="font-semibold text-neutral-200">Re-configure Wallet Setup</h4>
               <p className="text-[11px] text-neutral-400">
-                Resets all local transactions and re-opens the onboarding setup to start from zero.
+                Re-opens the wallet setup wizard to customize your starting balance, monthly salary, and goals.
               </p>
               <Button
                 variant="outline"
@@ -279,14 +230,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 className="gap-1.5 border-white/[0.08] text-xs text-neutral-300 w-full"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                <span>Re-configure Wallet</span>
+                <span>Re-configure Wallet Setup</span>
               </Button>
             </div>
 
             <div className="p-4 rounded-xl bg-neutral-950/70 border border-white/[0.06] space-y-2">
-              <h4 className="font-semibold text-neutral-200">Load Sample Template</h4>
+              <h4 className="font-semibold text-neutral-200">Preview Sample Template</h4>
               <p className="text-[11px] text-neutral-400">
-                Loads a realistic 6-month transaction dataset with salary, rent, and utility bills for testing.
+                Optionally loads sample transactions with salary, rent, and utility bills for demonstration testing.
               </p>
               <Button
                 variant="outline"

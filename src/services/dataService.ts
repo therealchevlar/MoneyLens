@@ -14,23 +14,11 @@ import {
 } from '@/src/data/mockFinanceData';
 
 const STORAGE_KEYS = {
-  ACCOUNT: 'moneylens_account_v2',
-  TRANSACTIONS: 'moneylens_transactions_v2',
-  GOALS: 'moneylens_goals_v2',
-  RECURRING: 'moneylens_recurring_v2',
-  ONBOARDED: 'moneylens_onboarded_v2',
-};
-
-const DEFAULT_READY_ACCOUNT: Account = {
-  id: 'acc_wallet_primary',
-  name: 'Personal Cash Wallet',
-  bankName: 'Personal Wallet',
-  accountNumberMasked: 'WALLET •••• 3810',
-  balance: 280000,
-  currency: 'PKR',
-  updatedAt: new Date().toISOString(),
-  monthlySalary: 250000,
-  salaryPayday: 1,
+  ACCOUNT: 'moneylens_v3_account',
+  TRANSACTIONS: 'moneylens_v3_transactions',
+  GOALS: 'moneylens_v3_goals',
+  RECURRING: 'moneylens_v3_recurring',
+  ONBOARDED: 'moneylens_v3_onboarded',
 };
 
 const DEFAULT_CLEAN_ACCOUNT: Account = {
@@ -46,11 +34,11 @@ const DEFAULT_CLEAN_ACCOUNT: Account = {
 };
 
 class DataService {
-  private account: Account = { ...DEFAULT_READY_ACCOUNT };
-  private transactions: Transaction[] = [...INITIAL_TRANSACTIONS];
-  private goals: Goal[] = [...INITIAL_GOALS];
-  private recurring: RecurringObligation[] = [...RECURRING_OBLIGATIONS];
-  private isOnboarded: boolean = true;
+  private account: Account = { ...DEFAULT_CLEAN_ACCOUNT };
+  private transactions: Transaction[] = [];
+  private goals: Goal[] = [];
+  private recurring: RecurringObligation[] = [];
+  private isOnboarded: boolean = false;
   private listeners: Set<() => void> = new Set();
 
   constructor() {
@@ -58,22 +46,19 @@ class DataService {
 
     if (typeof window !== 'undefined') {
       try {
+        const onboarded = localStorage.getItem(STORAGE_KEYS.ONBOARDED);
         const savedAcc = localStorage.getItem(STORAGE_KEYS.ACCOUNT);
         const savedTxs = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
         const savedGoals = localStorage.getItem(STORAGE_KEYS.GOALS);
         const savedRec = localStorage.getItem(STORAGE_KEYS.RECURRING);
 
-        if (savedAcc && savedTxs) {
-          const parsedTxs = JSON.parse(savedTxs);
-          // Only load if transactions exist; otherwise fall back to full initialized dataset
-          if (Array.isArray(parsedTxs) && parsedTxs.length > 0) {
-            this.account = JSON.parse(savedAcc);
-            this.transactions = parsedTxs;
-            this.goals = savedGoals ? JSON.parse(savedGoals) : [...INITIAL_GOALS];
-            this.recurring = savedRec ? JSON.parse(savedRec) : [...RECURRING_OBLIGATIONS];
-            this.isOnboarded = true;
-            loaded = true;
-          }
+        if (onboarded === 'true' && savedAcc) {
+          this.account = JSON.parse(savedAcc);
+          this.transactions = savedTxs ? JSON.parse(savedTxs) : [];
+          this.goals = savedGoals ? JSON.parse(savedGoals) : [];
+          this.recurring = savedRec ? JSON.parse(savedRec) : [];
+          this.isOnboarded = true;
+          loaded = true;
         }
       } catch (e) {
         console.error('Failed to parse saved wallet data:', e);
@@ -81,13 +66,12 @@ class DataService {
     }
 
     if (!loaded) {
-      // PRE-INITIALIZE ALL PRODUCTION VALUES READY TO LAUNCH
-      this.isOnboarded = true;
-      this.account = { ...DEFAULT_READY_ACCOUNT };
-      this.transactions = [...INITIAL_TRANSACTIONS];
-      this.goals = [...INITIAL_GOALS];
-      this.recurring = [...RECURRING_OBLIGATIONS];
-      this.persist();
+      // READY TO SHIP: ZERO DEMO TRANSACTIONS / ZERO DEMO DATA OUT OF THE BOX
+      this.isOnboarded = false;
+      this.account = { ...DEFAULT_CLEAN_ACCOUNT };
+      this.transactions = [];
+      this.goals = [];
+      this.recurring = [];
     }
   }
 
@@ -117,7 +101,7 @@ class DataService {
   }
 
   public getReferenceDate(): string {
-    return CURRENT_REFERENCE_DATE;
+    return new Date().toISOString().split('T')[0];
   }
 
   public hasCompletedOnboarding(): boolean {
@@ -129,26 +113,38 @@ class DataService {
     monthlySalary: number;
     salaryPayday: number;
     walletName?: string;
+    currency?: string;
+    initialGoal?: {
+      name: string;
+      category: string;
+      targetAmount: number;
+      deadline: string;
+      monthlyContribution: number;
+    };
   }) {
     this.isOnboarded = true;
+    const refDate = this.getReferenceDate();
+    const curr = (config.currency || 'PKR') as any;
+
     this.account = {
       ...this.account,
-      name: config.walletName || 'Personal Cash Wallet',
+      name: config.walletName?.trim() || 'Personal Cash Wallet',
       bankName: 'Personal Wallet',
-      accountNumberMasked: 'WALLET •••• 01',
-      balance: config.startingBalance || 0,
-      monthlySalary: config.monthlySalary || 0,
+      accountNumberMasked: `WALLET •••• ${Math.floor(1000 + Math.random() * 9000)}`,
+      balance: Math.max(0, config.startingBalance || 0),
+      monthlySalary: Math.max(0, config.monthlySalary || 0),
       salaryPayday: config.salaryPayday || 1,
+      currency: curr,
       updatedAt: new Date().toISOString(),
     };
 
-    // If starting balance is positive, log initial balance entry
+    // If starting balance is positive, log single opening cash deposit
     if (config.startingBalance > 0) {
       const initialTx: Transaction = {
         id: `tx_init_${Date.now()}`,
-        date: CURRENT_REFERENCE_DATE,
-        merchant: 'Initial Cash Deposit',
-        description: 'Opening wallet cash balance',
+        date: refDate,
+        merchant: 'Opening Cash Balance',
+        description: 'Opening wallet funds recorded during setup',
         category: 'Salary',
         amount: config.startingBalance,
         type: 'income',
@@ -160,21 +156,26 @@ class DataService {
       this.transactions = [];
     }
 
-    // Default safety reserve goal
-    this.goals = [
-      {
-        id: 'goal_emergency_reserve',
-        name: 'Emergency Reserve Fund',
-        category: 'Safety',
-        targetAmount: Math.max(100000, (config.monthlySalary || 100000) * 2),
-        currentAmount: Math.min(config.startingBalance * 0.4, 50000),
-        deadline: '2027-04-30',
-        monthlyContribution: Math.round((config.monthlySalary || 100000) * 0.1),
-        createdAt: CURRENT_REFERENCE_DATE,
-        color: '#10b981',
-      },
-    ];
+    // If user defined an initial goal during setup
+    if (config.initialGoal && config.initialGoal.targetAmount > 0) {
+      this.goals = [
+        {
+          id: `goal_${Date.now()}`,
+          name: config.initialGoal.name,
+          category: config.initialGoal.category || 'Safety',
+          targetAmount: config.initialGoal.targetAmount,
+          currentAmount: Math.min(config.startingBalance * 0.25, config.initialGoal.targetAmount * 0.25),
+          deadline: config.initialGoal.deadline || '2027-04-30',
+          monthlyContribution: config.initialGoal.monthlyContribution || Math.round(config.initialGoal.targetAmount / 12),
+          createdAt: refDate,
+          color: '#10b981',
+        },
+      ];
+    } else {
+      this.goals = [];
+    }
 
+    this.recurring = [];
     this.notify();
   }
 

@@ -82,8 +82,8 @@ The user is managing their personal wallet and finances in PKR.
 Current Grounded Ledger Context:
 - Available Liquid Balance: PKR ${currentBalance.toLocaleString()}
 - Configured Monthly Salary: PKR ${monthlySalary.toLocaleString()} (Expected on day ${salaryPayday} of each month)
-- September Total Outflow: PKR ${accountSummary.septemberExpenses.toLocaleString()}
-- September Net Savings: PKR ${accountSummary.netSavings.toLocaleString()}
+- Current Month Total Outflow: PKR ${(accountSummary.currentMonthExpenses ?? (accountSummary as any).septemberExpenses ?? 0).toLocaleString()}
+- Current Month Net Savings: PKR ${(accountSummary.netSavings ?? 0).toLocaleString()}
 - Upcoming Scheduled Bills / Obligations (Next 15 days): PKR ${upcomingTotal.toLocaleString()} (${upcomingBills.map(b => `${b.merchant} PKR ${b.amount.toLocaleString()} due ${b.nextDueDate}`).join(', ') || 'No upcoming bills in the next 15 days'})
 - Strict Emergency Floor Target: PKR 100,000
 - Safe Discretionary Spending Capacity Right Now: PKR ${safeHeadroom.toLocaleString()} (Balance ${currentBalance.toLocaleString()} - Bills ${upcomingTotal.toLocaleString()} - 100k safety floor)
@@ -521,7 +521,7 @@ Rules:
           `Based on your active account holding ${formatPKR(currentBalance)}, your financial health is stable at 74/100 with PKR ${safeHeadroom.toLocaleString()} in safe discretionary headroom.`,
         keyNumbers: [
           { label: 'Available Balance', value: formatPKR(currentBalance) },
-          { label: 'Monthly Inflow', value: formatPKR(accountSummary.septemberIncome) },
+          { label: 'Monthly Inflow', value: formatPKR(accountSummary.currentMonthIncome) },
           { label: 'Upcoming Bills (15 Days)', value: formatPKR(upcomingTotal) },
           { label: 'Safe Spending Capacity', value: formatPKR(safeHeadroom), highlight: true },
         ],
